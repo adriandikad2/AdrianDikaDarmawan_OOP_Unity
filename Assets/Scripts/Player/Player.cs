@@ -1,57 +1,61 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // Start is called before the first frame update
-
+    // This for getting the instace of Player Singleton
     public static Player Instance { get; private set; }
-    public PlayerMovement playerMovement;
-    public Animator animator;
-    private Weapon currentWeapon;
 
-    void Awake() {
-        if (Instance == null)
+    // Getting the PlayerMovement methods
+    PlayerMovement playerMovement;
+    // Animator
+    Animator animator;
+
+
+    // Key for Singleton
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Destroy(this);
+            return;
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+
+        Instance = this;
+
+        DontDestroyOnLoad(gameObject);
     }
-    
-    void Start() {
+
+    // Getting Component
+    void Start()
+    {
+        // Get PlayerMovement components
         playerMovement = GetComponent<PlayerMovement>();
-        Transform engineEffectTransform = transform.Find("Engine/EngineEffect");
 
-        if (engineEffectTransform != null) {
-            animator = engineEffectTransform.GetComponent<Animator>();
-        } else {
-            Debug.LogError("Animator not found! Ensure Engines/BaseEngineAnimator path is correct.");
-        }
+        // Get Animator components
+        animator = GameObject.Find("EngineEffects").GetComponent<Animator>();
     }
 
-    public bool HasWeapon() {
-        return currentWeapon != null;
+    // Using FixedUpdate to Move because of physics
+    void FixedUpdate()
+    {
+        playerMovement.Move();
     }
 
-    public void EquipWeapon(Weapon weapon) {
-        currentWeapon = weapon;
-    }
-
-    void FixedUpdate() {
-            playerMovement.Move();
-    }
-    
-    // Update is called once per frame
+    // LateUpdate for animation related
     void LateUpdate()
     {
-        if (animator != null && playerMovement != null)
+        playerMovement.MoveBound();
+        animator.SetBool("IsMoving", playerMovement.IsMoving());
+    }
+
+    private WeaponPickup currentWeaponPickup;
+
+    public void SwitchWeapon(Weapon newWeapon, WeaponPickup newWeaponPickup)
+    {
+        if (currentWeaponPickup != null)
         {
-            animator.SetBool("IsMoving", playerMovement.IsMoving());
+            currentWeaponPickup.PickupHandler(true);  // Make the previous weapon pickup visible again
         }
+        currentWeaponPickup = newWeaponPickup;
     }
 }
